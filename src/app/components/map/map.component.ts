@@ -22,8 +22,9 @@ export class MapComponent {
       showZoomButtons: true,
       showTooltip: true,
       regionsSelectable: true,
-      onRegionTooltipShow(event: any, tooltip: { css: (arg0: { backgroundColor: string; }) => void; }) {
-        tooltip.css({backgroundColor: '#c96'})
+      onRegionTooltipShow(event: any, tooltip:
+        { css: (arg0: { backgroundColor: string; color: string; }) => void; }) {
+        tooltip.css({backgroundColor: '#262626', color: '#c96'})
       },
       regionStyle: {
         initial: {

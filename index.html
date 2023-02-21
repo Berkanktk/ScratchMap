@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>World Map - jVectorMap</title>
+        <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,500,700" rel="stylesheet">
+        <link rel="stylesheet" href="util/jquery-jvectormap-2.0.5.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <script src="util/jquery-jvectormap-2.0.5.js"></script>
+
+        <!--- World SVG Path Info file in jVectorMap supported format-->
+        <script src="map/jquery-jvectormap-world-merc.js"></script>
+    </head>
+
+    <body>
+
+        <div class="container">
+            <div id="world-map" style="width: 1200px; height: 800px"></div>
+        </div>
+
+        <h3>Selected Markers</h3>
+        <p class="selected-markers"></p>
+
+        <script>
+            $('#world-map').vectorMap({
+                map: 'world_merc',
+                regionsSelectable: true,
+                backgroundColor: 'rgba(38,161,232,0.8)',
+                zoomAnimate: true,
+                regionStyle: {
+                    initial: {
+                        fill: '#ffffff'
+                    },
+                    selected: {
+                        fill: '#B8E186'
+                    }
+                },
+                onRegionSelected: function(event, code, isSelected) {
+                    var selectedRegions = $('#world-map').vectorMap('get', 'mapObject').getSelectedRegions();
+
+                    // get the selected regions name
+                    var selectedRegionsName = selectedRegions.map(function(region) {
+                        return $('#world-map').vectorMap('get', 'mapObject').getRegionName(region);
+                    });
+
+                    // display the selected regions name and sort them alphabetically
+                    $('.selected-markers').html(selectedRegionsName.sort().join(', '));
+                }
+            });
+        </script>
+
+    </body>
+</html>
+

@@ -21,7 +21,15 @@
 
             <div class="column">
                 <h1>Visited Countries</h1>
-                <p class="selected-markers"></p>
+
+                <h2 style="display: inline-block">Show Countries</h2>
+                <label class="switch">
+                    <input type="checkbox" id="show-visited-countries">
+                    <span class="slider round"></span>
+                </label>
+                <p class="selected-markers" style="display: none;">You haven't visited any countries yet!</p>
+
+                <h2>Export Data</h2>
 
                 <button class="button" onclick="saveImage()">Save Image</button>
 
@@ -108,6 +116,17 @@
                     a.click();
                 };
             }
+
+            const checkbox = document.getElementById('show-visited-countries');
+            const visitedCountries = document.querySelector('.selected-markers');
+
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    visitedCountries.style.display = 'block';
+                } else {
+                    visitedCountries.style.display = 'none';
+                }
+            });
         </script>
 
     </body>

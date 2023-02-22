@@ -1,0 +1,42 @@
+<body>
+
+<div class="container">
+  <div style="text-align: center">
+    <div id="map" class="column" style="width: 1200px; height: 800px"></div>
+    <button class="button" (click)="resetMap()">Reset Map</button>
+  </div>
+
+  <div class="column">
+    <h1>Visited Countries</h1>
+    <p>
+      MyScratchMap allows you to keep track of the countries you have
+      visited and gives you the ability to share the data with others.
+      You can select the countries by clicking on them on the world map,
+      and the list of visited countries will be displayed below, if the
+      "Show Countries" switch is turned on. </p>
+
+    <h2 style="display: inline-block">Show Countries</h2>
+    <label class="switch">
+      <input type="checkbox" id="show-visited-countries" (click)="toggleVisitedCountries()">
+      <span class="slider round"></span>
+    </label>
+    <p class="selected-markers" [ngClass]="{'show': showVisitedCountries, 'hide': !showVisitedCountries}">
+      {{getVisitedCountries()}}</p>
+    <h2>Export Data</h2>
+
+    <button class="button" (click)="saveImage()">Save Image</button>
+    <button class="button" (click)="downloadCSV()">Download CSV</button>
+    <button class="button" (click)="downloadJSON()">Download JSON</button>
+    <button class="button" (click)="downloadTXT()">Download TXT</button>
+
+    <h2>Visited Countries</h2>
+    <div class="visited-countries">
+      <label class="visited-country">
+        <input type="checkbox" name="country" value="AF" >
+        <span class="checkmark"></span>
+        Afghanistan
+      </label>
+    </div>
+
+  </div>
+</div>

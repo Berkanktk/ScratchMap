@@ -11,6 +11,7 @@ import 'jsvectormap/dist/maps/world.js'
 export class MapComponent {
   private map: any;
   showVisitedCountries = false;
+  filteredCountries: string[] = [];
 
   constructor() {
   }
@@ -37,6 +38,7 @@ export class MapComponent {
       },
       markerColor: '#c96',
     })
+    this.filteredCountries = this.getMapCountries()
   }
 
   resetMap() {
@@ -100,7 +102,7 @@ export class MapComponent {
   }
 
   getMapCountries() {
-    return Object.keys(this.map.regions).map((key) => this.map.regions[key].config.name)
+    return Object.keys(this.map.regions).map((key) => this.map.regions[key].config.name).sort()
   }
 
   toggleVisitedCountries() {
@@ -116,5 +118,23 @@ export class MapComponent {
     }
 
     return countries.sort().join(', ')
+  }
+
+  toggleCountry(country: any) {
+    console.log(country)
+  }
+
+  filterCountries($event: Event) {
+    const search = ($event.target as HTMLInputElement).value.trim().toLowerCase();
+    if (search) {
+      const filteredCountries = this.getMapCountries().filter((country) =>
+        country.toLowerCase().includes(search)
+      );
+      this.filteredCountries = filteredCountries;
+      return filteredCountries;
+    } else {
+      this.filteredCountries = this.getMapCountries();
+      return this.filteredCountries;
+    }
   }
 }

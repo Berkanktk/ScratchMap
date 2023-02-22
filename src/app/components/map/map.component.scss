@@ -142,3 +142,49 @@ label {
 .hide {
   display: none;
 }
+
+.list {
+  height: calc(100vh - 600px);
+  overflow: auto;
+}
+
+.country {
+  width: 95%;
+}
+
+.countries {
+  color: white;
+  display: grid;
+  padding: 8px;
+  background-color: #2a2a2a;
+  margin-bottom: 5px;
+  border-radius: 10px;
+}
+
+.search {
+  background-color: #2a2a2a;
+  border-radius: 10px;
+  border-color: #c96;
+  padding: 10px;
+  margin-bottom: 15px;
+  width: 50%;
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c96;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #efb277;
+}

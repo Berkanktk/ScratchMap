@@ -29,14 +29,13 @@
     <button class="button" (click)="downloadJSON()">Download JSON</button>
     <button class="button" (click)="downloadTXT()">Download TXT</button>
 
-    <h2>Visited Countries</h2>
-    <div class="visited-countries">
-      <label class="visited-country">
-        <input type="checkbox" name="country" value="AF" >
-        <span class="checkmark"></span>
-        Afghanistan
-      </label>
-    </div>
+    <h2>All Countries</h2>
+    <input type="text" id="search" class="search" placeholder="Search..." (keyup)="filterCountries($event)">
+      <div class="list">
+        <div *ngFor="let country of filteredCountries" class="country" (click)="toggleCountry(country)">
+          <div class="countries">{{country}}</div>
+        </div>
+      </div>
 
   </div>
 </div>

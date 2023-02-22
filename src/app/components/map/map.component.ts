@@ -110,6 +110,11 @@ export class MapComponent {
   getVisitedCountries() {
     const selectedRegions = this.map.getSelectedRegions()
     const countries = this.transformRegionsToCountries(selectedRegions)
+
+    if (countries.length === 0) {
+      return 'No countries selected.'
+    }
+
     return countries.sort().join(', ')
   }
 }

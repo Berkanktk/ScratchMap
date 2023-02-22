@@ -12,6 +12,7 @@ export class MapComponent {
   private map: any;
   showVisitedCountries = false;
   filteredCountries: string[] = [];
+  selectedCountry: string = '';
 
   constructor() {
   }
@@ -137,4 +138,13 @@ export class MapComponent {
       return this.filteredCountries;
     }
   }
+
+  toggleSelection(country: string) {
+    if (this.selectedCountry === country) {
+      this.selectedCountry = '';
+    } else {
+      this.selectedCountry = country;
+    }
+  }
+
 }

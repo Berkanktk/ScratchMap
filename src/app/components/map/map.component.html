@@ -31,11 +31,13 @@
 
     <h2>All Countries</h2>
     <input type="text" id="search" class="search" placeholder="Search..." (keyup)="filterCountries($event)">
-      <div class="list">
-        <div *ngFor="let country of filteredCountries" class="country" (click)="toggleCountry(country)">
-          <div class="countries">{{country}}</div>
+    <div class="list">
+      <div *ngFor="let country of filteredCountries" class="country" (click)="toggleSelection(country)">
+        <div class="countries" [ngClass]="{'selected': getVisitedCountries().includes(country)}">
+          {{country}}
         </div>
       </div>
+    </div>
 
   </div>
 </div>

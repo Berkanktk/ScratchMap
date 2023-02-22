@@ -10,6 +10,7 @@ import 'jsvectormap/dist/maps/world.js'
 })
 export class MapComponent {
   private map: any;
+  showVisitedCountries = false;
 
   constructor() {
   }
@@ -100,5 +101,15 @@ export class MapComponent {
 
   getMapCountries() {
     return Object.keys(this.map.regions).map((key) => this.map.regions[key].config.name)
+  }
+
+  toggleVisitedCountries() {
+    this.showVisitedCountries = !this.showVisitedCountries;
+  }
+
+  getVisitedCountries() {
+    const selectedRegions = this.map.getSelectedRegions()
+    const countries = this.transformRegionsToCountries(selectedRegions)
+    return countries.sort().join(', ')
   }
 }

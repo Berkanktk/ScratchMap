@@ -17,11 +17,11 @@
 
     <h2 style="display: inline-block">Show Countries</h2>
     <label class="switch">
-      <input type="checkbox" id="show-visited-countries">
+      <input type="checkbox" id="show-visited-countries" (click)="toggleVisitedCountries()">
       <span class="slider round"></span>
     </label>
-    <p class="selected-markers" style="display: none;">You haven't visited any countries yet!</p>
-
+    <p class="selected-markers" [ngClass]="{'show': showVisitedCountries, 'hide': !showVisitedCountries}">
+      {{getVisitedCountries()}}</p>
     <h2>Export Data</h2>
 
     <button class="button" (click)="saveImage()">Save Image</button>

@@ -3,7 +3,7 @@
 <div class="container">
   <div style="text-align: center">
     <div id="map" class="column" style="width: 1200px; height: 800px"></div>
-    <button class="button" id="reset">Reset Map</button>
+    <button class="button" (click)="resetMap()">Reset Map</button>
   </div>
 
   <div class="column">
@@ -18,11 +18,10 @@
 
     <h2>Export Data</h2>
 
-<!--    <button class="button" (click)="saveImage()">Save Image</button>-->
-<!--    <button class="button" (click)="downloadCSV()">Download CSV</button>-->
-<!--    <button class="button" (click)="downloadJSON()">Download JSON</button>-->
-<!--    <button class="button" (click)="downloadTXT()">Download TXT</button>-->
-
+    <button class="button" (click)="saveImage()">Save Image</button>
+    <button class="button" (click)="downloadCSV()">Download CSV</button>
+    <button class="button" (click)="downloadJSON()">Download JSON</button>
+    <button class="button" (click)="downloadTXT()">Download TXT</button>
 
     <h2>Visited Countries</h2>
     <div class="visited-countries">

@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 // @ts-ignore
 import jsVectorMap from 'jsvectormap'
 import 'jsvectormap/dist/maps/world.js'
@@ -158,5 +158,10 @@ export class MapComponent {
 
   setting1() {
     console.log('setting active')
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.map.updateSize()
   }
 }

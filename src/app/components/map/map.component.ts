@@ -67,7 +67,7 @@ export class MapComponent {
 
   downloadCSV() {
     const selectedRegions = this.map.getSelectedRegions()
-    const countries = this.transformRegionsToCountries(selectedRegions)
+    const countries = this.transformCountryCodes(selectedRegions)
     const csv = countries.join('\n')
     const blob = new Blob([csv], {type: 'text/csv'})
     const link = document.createElement('a')
@@ -78,7 +78,7 @@ export class MapComponent {
 
   downloadJSON() {
     const selectedRegions = this.map.getSelectedRegions()
-    const countries = this.transformRegionsToCountries(selectedRegions)
+    const countries = this.transformCountryCodes(selectedRegions)
     const json = JSON.stringify(countries)
     const blob = new Blob([json], {type: 'application/json'})
     const link = document.createElement('a')
@@ -89,7 +89,7 @@ export class MapComponent {
 
   downloadTXT() {
     const selectedRegions = this.map.getSelectedRegions()
-    const countries = this.transformRegionsToCountries(selectedRegions)
+    const countries = this.transformCountryCodes(selectedRegions)
     const txt = countries.join('\n')
     const blob = new Blob([txt], {type: 'text/plain'})
     const link = document.createElement('a')
@@ -98,11 +98,11 @@ export class MapComponent {
     link.click()
   }
 
-  transformRegionsToCountries(regions: string[]) {
+  transformCountryCodes(regions: string[]) {
     return regions.map((region) => this.map.regions[region].config.name)
   }
 
-  getMapCountries() {
+  getCountries() {
     return Object.keys(this.map.regions).map((key) => this.map.regions[key].config.name).sort()
   }
 
@@ -112,7 +112,7 @@ export class MapComponent {
 
   getVisitedCountries() {
     const selectedRegions = this.map.getSelectedRegions()
-    const countries = this.transformRegionsToCountries(selectedRegions)
+    const countries = this.transformCountryCodes(selectedRegions)
 
     if (countries.length === 0) {
       return 'No countries selected.'
@@ -128,13 +128,13 @@ export class MapComponent {
   filterCountries($event: Event) {
     const search = ($event.target as HTMLInputElement).value.trim().toLowerCase();
     if (search) {
-      const filteredCountries = this.getMapCountries().filter((country) =>
+      const filteredCountries = this.getCountries().filter((country) =>
         country.toLowerCase().includes(search)
       );
       this.filteredCountries = filteredCountries;
       return filteredCountries;
     } else {
-      this.filteredCountries = this.getMapCountries();
+      this.filteredCountries = this.getCountries();
       return this.filteredCountries;
     }
   }

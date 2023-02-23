@@ -41,6 +41,7 @@ footer {
 
 a[title]:hover::after {
   content: attr(title);
+  font-size: 18px;
   position: absolute;
   top: -50px;
   left: -50px;

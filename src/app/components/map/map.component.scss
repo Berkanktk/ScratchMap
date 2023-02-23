@@ -175,6 +175,10 @@ label {
   color: white;
 }
 
+.search:focus {
+  outline: none;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
 }

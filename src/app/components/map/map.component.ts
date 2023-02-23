@@ -2,6 +2,7 @@ import {Component, HostListener} from '@angular/core';
 // @ts-ignore
 import jsVectorMap from 'jsvectormap'
 import 'jsvectormap/dist/maps/world.js'
+import { LocalStorageService } from '../../services/local-storage.service';
 
 @Component({
   selector: 'app-map',
@@ -13,7 +14,7 @@ export class MapComponent {
   showOptions = false;
   filteredCountries: string[] = [];
 
-  constructor() {
+  constructor(private localStorageService: LocalStorageService) {
   }
 
   ngOnInit() {
@@ -29,6 +30,7 @@ export class MapComponent {
       showZoomButtons: true,
       showTooltip: true,
       regionsSelectable: true,
+      selectedRegions: this.localStorageService.getObject('selectedRegion') || [],
       onRegionTooltipShow(event: any, tooltip:
         { css: (arg0: { backgroundColor: string; color: string; }) => void; }) {
         tooltip.css({backgroundColor: '#262626', color: '#c96'})
@@ -163,5 +165,10 @@ export class MapComponent {
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.map.updateSize()
+  }
+
+  @HostListener('window:click', ['$event'])
+  onRegionClicked() {
+    this.localStorageService.saveObject('selectedRegion', this.map.getSelectedRegions())
   }
 }

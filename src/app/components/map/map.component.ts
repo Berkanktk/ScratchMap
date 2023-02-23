@@ -12,12 +12,16 @@ export class MapComponent {
   private map: any;
   showVisitedCountries = false;
   filteredCountries: string[] = [];
-  selectedCountry: string = '';
 
   constructor() {
   }
 
   ngOnInit() {
+    this.loadMap()
+    this.filteredCountries = this.getCountries()
+  }
+
+  loadMap() {
     this.map = new jsVectorMap({
       selector: '#map',
       map: 'world',
@@ -35,11 +39,10 @@ export class MapComponent {
         },
         selected: {
           fill: '#c96',
-        }
+        },
       },
       markerColor: '#c96',
     })
-    this.filteredCountries = this.getMapCountries()
   }
 
   resetMap() {
@@ -106,6 +109,11 @@ export class MapComponent {
     return Object.keys(this.map.regions).map((key) => this.map.regions[key].config.name).sort()
   }
 
+  getCountryCode(country: string) {
+    return Object.keys(this.map.regions)
+      .filter(key => this.map.regions[key].config.name === country);
+  }
+
   toggleVisitedCountries() {
     this.showVisitedCountries = !this.showVisitedCountries;
   }
@@ -119,10 +127,6 @@ export class MapComponent {
     }
 
     return countries.sort().join(', ')
-  }
-
-  toggleCountry(country: any) {
-    console.log(country)
   }
 
   filterCountries($event: Event) {
@@ -139,11 +143,16 @@ export class MapComponent {
     }
   }
 
-  toggleSelection(country: string) {
-    if (this.selectedCountry === country) {
-      this.selectedCountry = '';
+  toggleCountry(country: any) {
+    const abbr = this.getCountryCode(country)
+    this.selectCountry(abbr[0])
+  }
+
+  selectCountry(code: string) {
+    if (this.map.getSelectedRegions().includes(code)) {
+      return this.map.regions[code].element.select(false)
     } else {
-      this.selectedCountry = country;
+      return this.map.regions[code].element.select(true)
     }
   }
 

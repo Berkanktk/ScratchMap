@@ -2,7 +2,7 @@
 
 <div class="container">
   <div style="text-align: center">
-    <div id="map" class="column" style="width: 1200px; height: 800px"></div>
+    <div id="map" class="column map-view"></div>
     <button class="button" (click)="resetMap()">Reset Map</button>
   </div>
 
@@ -15,19 +15,14 @@
       and the list of visited countries will be displayed below, if the
       "Show Countries" switch is turned on. </p>
 
-    <h2 style="display: inline-block">Show Countries</h2>
-    <label class="switch">
-      <input type="checkbox" id="show-visited-countries" (click)="toggleVisitedCountries()">
-      <span class="slider round"></span>
-    </label>
-    <p class="selected-markers" [ngClass]="{'show': showVisitedCountries, 'hide': !showVisitedCountries}">
-      {{getVisitedCountries()}}</p>
-    <h2>Export Data</h2>
+<!--    <h2 style="display: inline-block">Show Options</h2>-->
+<!--    <label class="switch">-->
+<!--      <input type="checkbox" id="show-visited-countries" (click)="toggleVisitedCountries()">-->
+<!--      <span class="slider round"></span>-->
+<!--    </label>-->
 
-    <button class="button" (click)="saveImage()">Save Image</button>
-    <button class="button" (click)="downloadCSV()">Download CSV</button>
-    <button class="button" (click)="downloadJSON()">Download JSON</button>
-    <button class="button" (click)="downloadTXT()">Download TXT</button>
+<!--    <p class="selected-markers" [ngClass]="{'show': showOptions, 'hide': !showOptions}">-->
+<!--      {{getVisitedCountries()}}</p>-->
 
     <h2>All Countries</h2>
     <input type="text" id="search" class="search" placeholder="Search..." (keyup)="filterCountries($event)">
@@ -38,6 +33,12 @@
         </div>
       </div>
     </div>
+
+    <h2>Export Data</h2>
+    <button class="button" (click)="saveImage()">Save Image</button>
+    <button class="button" (click)="downloadCSV()">Download CSV</button>
+    <button class="button" (click)="downloadJSON()">Download JSON</button>
+    <button class="button" (click)="downloadTXT()">Download TXT</button>
 
   </div>
 </div>

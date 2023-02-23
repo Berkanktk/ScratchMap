@@ -10,7 +10,7 @@ import 'jsvectormap/dist/maps/world.js'
 })
 export class MapComponent {
   private map: any;
-  showVisitedCountries = false;
+  showOptions = false;
   filteredCountries: string[] = [];
 
   constructor() {
@@ -115,7 +115,7 @@ export class MapComponent {
   }
 
   toggleVisitedCountries() {
-    this.showVisitedCountries = !this.showVisitedCountries;
+    this.showOptions = !this.showOptions;
   }
 
   getVisitedCountries() {
@@ -156,4 +156,7 @@ export class MapComponent {
     }
   }
 
+  setting1() {
+    console.log('setting active')
+  }
 }

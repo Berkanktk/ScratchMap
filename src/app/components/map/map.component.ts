@@ -1,6 +1,6 @@
 import {Component, HostListener} from '@angular/core';
 // @ts-ignore
-import jsVectorMap from 'jsvectormap'
+import JSVectorMap from 'jsvectormap'
 import 'jsvectormap/dist/maps/world.js'
 import { LocalStorageService } from '../../services/local-storage.service';
 
@@ -10,7 +10,7 @@ import { LocalStorageService } from '../../services/local-storage.service';
   styleUrls: ['./map.component.scss']
 })
 export class MapComponent {
-  private map: any;
+  private map: JSVectorMap;
   showOptions = false;
   filteredCountries: string[] = [];
 
@@ -23,7 +23,7 @@ export class MapComponent {
   }
 
   loadMap() {
-    this.map = new jsVectorMap({
+    this.map = new JSVectorMap({
       selector: '#map',
       map: 'world',
       enableZoom: true,

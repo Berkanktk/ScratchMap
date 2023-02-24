@@ -25,3 +25,10 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+# Links
+[jvectormap](https://github.com/bjornd/jvectormap) - jQuery Vector Map Library   
+[jsvectormap](https://github.com/themustafaomar/jsvectormap) - javascript Vector Map Library   
+[jsvectormap Docs](https://jvm-docs.vercel.app/docs/introduction) - javascript Vector Map Library Docs  
+[Maps and Country codes](https://gist.github.com/paulsheldrake/69d8817ab616aa81919b9dc438359ccf)  - Country codes and maps
+

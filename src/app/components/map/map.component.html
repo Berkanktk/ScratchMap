@@ -8,11 +8,10 @@
 
   <div class="column">
     <h1>Visited Countries</h1>
-    <p>
-      MyScratchMap is a tool that helps you keep track of the countries you have
-      visited and share your travel data with others. Simply click on the countries
-      you have visited on the world map and the list of visited countries will be
-      displayed below.
+    <p style="margin-bottom: 0;">
+      Track and share your travel adventures with MyScratchMap! Click on countries and islands you've visited on the
+      interactive map to create a personalized record. Join a vibrant community of fellow travelers, showcasing your
+      journey and drawing inspiration from others.
     </p>
 
 <!--    <h2 style="display: inline-block">Show Options</h2>-->
@@ -24,7 +23,7 @@
 <!--    <p class="selected-markers" [ngClass]="{'show': showOptions, 'hide': !showOptions}">-->
 <!--      {{getVisitedCountries()}}</p>-->
 
-    <h2>All Countries</h2>
+      <h2>All Countries</h2>
     <input type="text" id="search" class="search" placeholder="Search..." (keyup)="filterCountries($event)">
     <div class="list">
       <div *ngFor="let country of filteredCountries" class="country" (click)="toggleCountry(country)">

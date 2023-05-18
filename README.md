@@ -26,6 +26,9 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
 
+## Deploy
+Run `ng deploy --base-href ./` to deploy to github pages, and make sure the dist folder has a `CNAME` including `myscratchmap.net`
+
 # Links
 [jvectormap](https://github.com/bjornd/jvectormap) - jQuery Vector Map Library   
 [jsvectormap](https://github.com/themustafaomar/jsvectormap) - javascript Vector Map Library   

@@ -101,6 +101,16 @@ export class MapComponent {
     link.click()
   }
 
+  downloadTXTAllCountries() {
+    const countries = this.getCountries()
+    const txt = countries.join('\n')
+    const blob = new Blob([txt], {type: 'text/plain'})
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = 'countries.txt'
+    link.click()
+  }
+
   transformCountryCodes(regions: string[]) {
     return regions.map((region) => this.map.regions[region].config.name)
   }

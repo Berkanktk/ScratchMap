@@ -1,8 +1,8 @@
 import {Component, HostListener} from '@angular/core';
 // @ts-ignore
 import JSVectorMap from 'jsvectormap'
-import 'jsvectormap/dist/maps/world.js'
 import { LocalStorageService } from '../../services/local-storage.service';
+import '../../../assets/world_merc_en.js'
 
 @Component({
   selector: 'app-map',
@@ -43,10 +43,8 @@ export class MapComponent {
           fill: '#c96',
         },
       },
-      markerColor: '#c96',
     })
   }
-
   resetMap() {
     this.map.clearSelectedRegions()
   }

@@ -158,8 +158,17 @@ export class MapComponent {
     }
   }
 
-  setting1() {
-    console.log('setting active')
+  // Return total number of countries that have been visited
+  getVisitedCountriesCount() {
+    const selectedRegions = this.map.getSelectedRegions()
+    const countries = this.transformCountryCodes(selectedRegions)
+    return countries.length
+  }
+
+  // Return total number of countries in the world
+  getTotalCountriesCount() {
+    const countries = this.getCountries()
+    return countries.length
   }
 
   @HostListener('window:resize', ['$event'])

@@ -23,7 +23,11 @@
 <!--    <p class="selected-markers" [ngClass]="{'show': showOptions, 'hide': !showOptions}">-->
 <!--      {{getVisitedCountries()}}</p>-->
 
+    <div style="display: flex; justify-content: space-between;">
       <h2>All Countries</h2>
+      <h2>{{getVisitedCountriesCount()}} out of {{getTotalCountriesCount()}}</h2>
+    </div>
+
     <input type="text" id="search" class="search" placeholder="Search..." (keyup)="filterCountries($event)">
     <div class="list">
       <div *ngFor="let country of filteredCountries" class="country" (click)="toggleCountry(country)">

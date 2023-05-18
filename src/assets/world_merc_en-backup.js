@@ -10,6 +10,7 @@ jsVectorMap.addMap('world',  {
       y: 6930392.025135122,
       x: 20026572.39474939
     }],
+    left: 0
   }],
   paths: {
     AF: {
@@ -1042,5 +1043,5 @@ jsVectorMap.addMap('world',  {
     type: "merc",
     centralMeridian: 8.5
   },
-  width: 1010,
+  width: 1010
 });

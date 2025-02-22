@@ -1,20 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
+  import { writable } from "svelte/store";
 
   let jsVectorMap: any;
   let map: any;
-  let filteredCountries: any = [];
-  let searchQuery = "";
+  let filteredCountries: string[] = [];
+  let searchQuery = writable("");
 
-  let visitedCountriesCount = 0;
-  let totalCountriesCount = 0;
-  let selectedCountries: any = [];
-
-  // Reactive updates
-  $: visitedCountriesCount = map ? getVisitedCountriesCount() : 0;
-  $: totalCountriesCount = map ? getTotalCountriesCount() : 0;
-  $: selectedCountries = map ? transformCountryCodes(map.getSelectedRegions()) : [];
+  let visitedCountriesCount = writable(0);
+  let totalCountriesCount = writable(0);
+  let selectedCountries = writable<string[]>([]);
 
   onMount(async () => {
     const module = await import("jsvectormap");
@@ -46,30 +42,27 @@
         initial: { fill: "#ffffff" },
         selected: { fill: "#c96" },
       },
-      onRegionSelected(e: any, code: any, isSelected: boolean) {
-        updateSelectedCountries();
-      },
+      onRegionSelected: updateSelectedCountries,
     });
 
-    // Reapply selection after the map is initialized
-    storedRegions.forEach((code: string) => {
+    storedRegions.forEach((code: any) => {
       if (map.regions[code]) {
         map.regions[code].element.select(true);
       }
     });
 
     filteredCountries = getCountries();
-
     updateSelectedCountries();
+
+    // Update totalCountriesCount after the map is loaded
+    totalCountriesCount.set(getTotalCountriesCount());
   }
 
   function updateSelectedCountries() {
     if (!map) return;
-
-    selectedCountries = transformCountryCodes(map.getSelectedRegions());
-
-    visitedCountriesCount = selectedCountries.length;
-
+    const selected = transformCountryCodes(map.getSelectedRegions());
+    selectedCountries.set(selected);
+    visitedCountriesCount.set(selected.length);
     localStorage.setItem(
       "selectedRegion",
       JSON.stringify(map.getSelectedRegions())
@@ -77,70 +70,45 @@
   }
 
   function resetMap() {
-    if (map) {
-      map.clearSelectedRegions();
-    }
-
+    if (map) map.clearSelectedRegions();
     localStorage.removeItem("selectedRegion");
-
-    visitedCountriesCount = getVisitedCountriesCount();
-    selectedCountries = transformCountryCodes(map.getSelectedRegions());
-    filteredCountries = getCountries();
+    selectedCountries.set([]);
+    visitedCountriesCount.set(0);
   }
 
-  function transformCountryCodes(regions: any) {
-    if (!map) return [];
-    return regions.map((region: any) => map.regions[region].config.name);
+  function transformCountryCodes(regions: string[]) {
+    return regions.map((region) => map.regions[region].config.name);
   }
 
   function getCountries() {
-    if (!map || !map.regions) return [];
-    return Object.keys(map.regions)
-      .map((key) => map.regions[key].config.name)
-      .sort();
+    return !map || !map.regions
+      ? []
+      : Object.keys(map.regions)
+          .map((key) => map.regions[key].config.name)
+          .sort();
   }
 
   function filterCountries(event: any) {
-    searchQuery = event.target.value.trim().toLowerCase();
-    filteredCountries = searchQuery
-      ? getCountries().filter((country) =>
-          country.toLowerCase().includes(searchQuery)
-        )
-      : getCountries();
+    searchQuery.set(event.target.value.trim().toLowerCase());
+    filteredCountries = getCountries().filter((country) =>
+      country.toLowerCase().includes(searchQuery)
+    );
   }
 
-  function toggleCountry(country: any) {
+  function toggleCountry(country: string) {
     if (!map) return;
-
     const code = Object.keys(map.regions).find(
       (key) => map.regions[key].config.name === country
     );
-
-    if (code) {
-      selectCountry(code);
-
-      selectedCountries = transformCountryCodes(map.getSelectedRegions());
-    }
+    if (code) selectCountry(code);
   }
 
-  function selectCountry(code: any) {
+  function selectCountry(code: string) {
     if (!map) return;
-
-    let selectedRegions = map.getSelectedRegions();
-
-    if (selectedRegions.includes(code)) {
-      map.regions[code].element.select(false);
-    } else {
-      map.regions[code].element.select(true);
-    }
-
+    map.getSelectedRegions().includes(code)
+      ? map.regions[code].element.select(false)
+      : map.regions[code].element.select(true);
     updateSelectedCountries();
-  }
-
-  function getVisitedCountriesCount() {
-    if (!map) return 0;
-    const selectedRegions = map.getSelectedRegions();
-    return transformCountryCodes(selectedRegions).length;
   }
 
   function getTotalCountriesCount() {
@@ -148,11 +116,11 @@
     return getCountries().length;
   }
 
-  function exportData(format: any) {
+  function exportData(format: string) {
     if (!map) return;
     const selectedRegions = map.getSelectedRegions();
     const countries = transformCountryCodes(selectedRegions);
-    let data;
+    let data: any;
     let type;
     let extension;
 
@@ -207,9 +175,9 @@
       visited.
     </p>
 
-    <div style="display: flex; justify-content: space-between;">
+    <div class="stats">
       <h2>All Countries</h2>
-      <h2>{visitedCountriesCount} out of {totalCountriesCount}</h2>
+      <h2>{$visitedCountriesCount} out of {$totalCountriesCount}</h2>
     </div>
 
     <input
@@ -217,6 +185,7 @@
       class="search"
       placeholder="Search..."
       on:input={filterCountries}
+      bind:value={$searchQuery}
     />
 
     <div class="list">
@@ -225,9 +194,8 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="country" on:click={() => toggleCountry(country)}>
           <div
-            class="countries {selectedCountries.includes(country)
-              ? 'selected'
-              : ''}"
+            class="countries"
+            class:selected={$selectedCountries.includes(country)}
           >
             {country}
           </div>
@@ -237,9 +205,15 @@
 
     <h2>Export Data</h2>
     <button class="button" on:click={saveImage}>Save as PNG</button>
-    <button class="button" on:click={() => exportData("csv")}>Save as CSV</button>
-    <button class="button" on:click={() => exportData("json")}>Save as JSON</button>
-    <button class="button" on:click={() => exportData("txt")}>Save as TXT</button>
+    <button class="button" on:click={() => exportData("csv")}
+      >Save as CSV</button
+    >
+    <button class="button" on:click={() => exportData("json")}
+      >Save as JSON</button
+    >
+    <button class="button" on:click={() => exportData("txt")}
+      >Save as TXT</button
+    >
   </div>
 </div>
 
@@ -325,6 +299,11 @@
     background-color: #2a2a2a;
     margin-bottom: 5px;
     border-radius: 10px;
+  }
+
+  .stats {
+    display: flex;
+    justify-content: space-between;
   }
 
   .search {

@@ -12,6 +12,8 @@
   let totalCountriesCount = writable(0);
   let selectedCountries = writable<string[]>([]);
 
+  let showCopySuccess = false;
+
   onMount(async () => {
     const module = await import("jsvectormap");
     jsVectorMap = module.default;
@@ -23,9 +25,19 @@
   });
 
   function loadMap() {
-    const storedRegions = JSON.parse(
-      localStorage.getItem("selectedRegion") || "[]"
-    );
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedRegions = urlParams.get("countries");
+
+    let sharedRegions = [];
+    if (encodedRegions) {
+      try {
+        sharedRegions = JSON.parse(atob(encodedRegions));
+      } catch (e) {
+        sharedRegions = [];
+      }
+    } else {
+      sharedRegions = JSON.parse(localStorage.getItem("selectedRegion") || "[]");
+    }
 
     map = new jsVectorMap({
       selector: "#map",
@@ -34,7 +46,7 @@
       showZoomButtons: true,
       showTooltip: true,
       regionsSelectable: true,
-      selectedRegions: storedRegions,
+      selectedRegions: sharedRegions,
       onRegionTooltipShow(e: any, tooltip: any, code: any) {
         tooltip.css({ backgroundColor: "#262626", color: "#c96" });
       },
@@ -45,7 +57,7 @@
       onRegionSelected: updateSelectedCountries,
     });
 
-    storedRegions.forEach((code: any) => {
+    sharedRegions.forEach((code: any) => {
       if (map.regions[code]) {
         map.regions[code].element.select(true);
       }
@@ -56,6 +68,11 @@
 
     // Update totalCountriesCount after the map is loaded
     totalCountriesCount.set(getTotalCountriesCount());
+  }
+
+  function showCopySuccessMessage() {
+    showCopySuccess = true;
+    setTimeout(() => (showCopySuccess = false), 2000);
   }
 
   function updateSelectedCountries() {
@@ -160,6 +177,15 @@
       a.click();
     };
   }
+  function shareMap() {
+    const selectedRegions = map.getSelectedRegions();
+    const encodedRegions = btoa(JSON.stringify(selectedRegions));
+    const shareURL = `${window.location.origin}${window.location.pathname}?countries=${encodedRegions}`;
+
+    navigator.clipboard.writeText(shareURL);
+    
+    showCopySuccessMessage();
+  }
 </script>
 
 <div class="container">
@@ -205,15 +231,10 @@
 
     <h2>Export Data</h2>
     <button class="button" on:click={saveImage}>Save as PNG</button>
-    <button class="button" on:click={() => exportData("csv")}
-      >Save as CSV</button
-    >
-    <button class="button" on:click={() => exportData("json")}
-      >Save as JSON</button
-    >
-    <button class="button" on:click={() => exportData("txt")}
-      >Save as TXT</button
-    >
+    <button class="button" on:click={() => exportData("csv")}>Save as CSV</button>
+    <button class="button" on:click={() => exportData("json")}>Save as JSON</button>
+    <button class="button" on:click={() => exportData("txt")}>Save as TXT</button>
+    <button class="button" on:click={shareMap}>{showCopySuccess ? "Link Copied!" : "Share Link"}</button>
   </div>
 </div>
 

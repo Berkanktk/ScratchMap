@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
-  import { get, writable } from "svelte/store";
+  import { writable } from "svelte/store";
   import LZString from "lz-string"; 
-  import { getStores } from "$app/stores";
 
   // Map
   let jsVectorMap: any;
@@ -112,16 +111,14 @@
       }
     });
 
-    // Update all regions with the proper color based on mode.
     Object.keys(map.regions).forEach((code) => {
       updateRegionStyle(code);
     });
 
     filteredCountries = getCountries();
-    updateActiveCountries();
-
     totalCountriesCount.set(getTotalCountriesCount());
-
+    
+    updateActiveCountries();
     updateVisitedCount();
   }
 
@@ -133,7 +130,6 @@
     );
   }
 
-  // Convenience function that returns the mode (or "none") for a given country name
   function getModeForCountry(country: string): "visited" | "planned" | "banned" | "none" {
     const code = getCountryCode(country);
     if (!code) return "none";
@@ -142,25 +138,30 @@
 
   // Cycle the mode for a given country code
   function toggleRegionMode(code: string) {
-  regionStatusesStore.update((statuses) => {
-    const currentMode = statuses[code] || null;
-    let newMode: "visited" | "planned" | "banned" | null;
+    regionStatusesStore.update((statuses) => {
+      const currentMode = statuses[code] || null;
+      let newMode: "visited" | "planned" | "banned" | null;
 
-    if (currentMode === null) newMode = "visited";
-    else if (currentMode === "visited") newMode = "planned";
-    else if (currentMode === "planned") newMode = "banned";
-    else newMode = null;
+      if (currentMode === null) newMode = "visited";
+      else if (currentMode === "visited") newMode = "planned";
+      else if (currentMode === "planned") newMode = "banned";
+      else newMode = null;
 
-    statuses[code] = newMode;
-    return statuses;
-  });
+      // if newmode is null, remove the country
+      if (newMode === null) {
+        delete statuses[code];
+      } else {
+        statuses[code] = newMode;
+      }
 
-  updateRegionStyle(code);
-  updateActiveCountries();
-  updateVisitedCount();
-  saveRegionStatuses();
-}
+      return statuses;
+    });
 
+    updateRegionStyle(code);
+    updateActiveCountries();
+    updateVisitedCount();
+    saveRegionStatuses();
+  }
 
   // Update the fill color for a given region based on its mode
   function updateRegionStyle(code: string) {
@@ -178,7 +179,6 @@
     activeCountries.set(active);
   }
 
-  // Count visited countries only (or you could count per mode if needed)
   function updateVisitedCount() {
     const visited = Object.values($regionStatusesStore).filter(
       (mode) => mode === "visited"
@@ -213,7 +213,7 @@
     );
   }
 
-  // When a country name is clicked from the list, find its code and toggle mode
+  // Toggle the mode for a given country name
   function toggleCountry(country: string) {
     if (!map) return;
 
@@ -229,7 +229,7 @@
     return getCountries().length;
   }
 
-  // Export data now includes region statuses for each country.
+  // Export data as CSV, JSON, or TXT
   function exportData(format: string) {
     if (!map) return;
     const dataArr = Object.keys($regionStatusesStore)
@@ -281,10 +281,8 @@
     };
   }
 
-  // When sharing the map, encode the regionStatuses in the URL using LZ‑String for a shorter string
   function shareMap() {
     const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify($regionStatusesStore));
-    console.log(JSON.stringify($regionStatusesStore));
     const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
     navigator.clipboard.writeText(shareURL);
     showCopySuccessMessage();

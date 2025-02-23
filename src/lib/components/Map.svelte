@@ -2,17 +2,57 @@
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
   import { writable } from "svelte/store";
+  import LZString from "lz-string"; 
 
+  // Map
   let jsVectorMap: any;
   let map: any;
+  
+  // Search
   let filteredCountries: string[] = [];
   let searchQuery = writable("");
-
+  
+  // Stats
   let visitedCountriesCount = writable(0);
   let totalCountriesCount = writable(0);
-  let selectedCountries = writable<string[]>([]);
-
+  let activeCountries = writable<string[]>([]);
+ 
   let showCopySuccess = false;
+  
+  let regionStatusesStore = writable<{ [code: string]: "visited" | "planned" | "banned" | null }>({});
+
+  const modeColors: { [key: string]: string } = {
+    visited: "#c78f57",
+    planned: "#e5cab0", // #e9d4be & #e5cab0 alternative
+    banned: "#2a2a2a",
+    none: "#ffffff"
+  };
+
+  const listColors: ListColors = {
+    visited: {
+      text: "black", 
+      background: "#c78f57"
+    },
+    planned: {
+      text: "black",
+      background: "#e5cab0"
+    },
+    banned: {
+      text: "#777777",
+      background: "#1c1c1c"
+    },
+    none: {
+      text: "antiquewhite",
+      background: "#2a2a2a"
+    }
+  };
+
+  interface ListColors {
+    visited: { text: string; background: string };
+    planned: { text: string; background: string };
+    banned: { text: string; background: string };
+    none: { text: string; background: string };
+  }
 
   onMount(async () => {
     const module = await import("jsvectormap");
@@ -24,20 +64,29 @@
     document.body.appendChild(script);
   });
 
-  function loadMap() {
+  // Load regionStatuses from URL parameter (if exists) or localStorage
+  function loadRegionStatuses() {
     const urlParams = new URLSearchParams(window.location.search);
-    const encodedRegions = urlParams.get("countries");
-
-    let sharedRegions = [];
-    if (encodedRegions) {
+    const encodedModes = urlParams.get("modes");
+    if (encodedModes) {
       try {
-        sharedRegions = JSON.parse(atob(encodedRegions));
+        const decompressed = LZString.decompressFromEncodedURIComponent(encodedModes);
+        $regionStatusesStore = JSON.parse(decompressed || "{}");
+        window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) {
-        sharedRegions = [];
+        $regionStatusesStore = {};
       }
     } else {
-      sharedRegions = JSON.parse(localStorage.getItem("selectedRegion") || "[]");
+      $regionStatusesStore = JSON.parse(localStorage.getItem("regionStatuses") || "{}");
     }
+  }
+
+  function saveRegionStatuses() {
+    localStorage.setItem("regionStatuses", JSON.stringify($regionStatusesStore));
+  }
+
+  function loadMap() {
+    loadRegionStatuses();
 
     map = new jsVectorMap({
       selector: "#map",
@@ -45,56 +94,107 @@
       enableZoom: true,
       showZoomButtons: true,
       showTooltip: true,
-      regionsSelectable: true,
-      selectedRegions: sharedRegions,
-      onRegionTooltipShow(e: any, tooltip: any, code: any) {
-        tooltip.css({ backgroundColor: "#262626", color: "#c96" });
-      },
+      regionsSelectable: false,
       regionStyle: {
-        initial: { fill: "#ffffff" },
-        selected: { fill: "#c96" },
+        initial: {
+          fill: function(code: string) {
+            const mode = $regionStatusesStore[code] || "none";
+            return modeColors[mode];
+          }
+        }
       },
-      onRegionSelected: updateSelectedCountries,
-    });
-
-    sharedRegions.forEach((code: any) => {
-      if (map.regions[code]) {
-        map.regions[code].element.select(true);
+      onRegionClick: (e: any, code: string) => {
+        toggleRegionMode(code);
+      },
+      onRegionTooltipShow(e: any, tooltip: any, code: string) {
+        tooltip.css({ backgroundColor: "#262626", color: "#c96" });
       }
     });
 
+    Object.keys(map.regions).forEach((code) => {
+      updateRegionStyle(code);
+    });
+
     filteredCountries = getCountries();
-    updateSelectedCountries();
-
-    // Update totalCountriesCount after the map is loaded
     totalCountriesCount.set(getTotalCountriesCount());
+    
+    updateActiveCountries();
+    updateVisitedCount();
   }
 
-  function showCopySuccessMessage() {
-    showCopySuccess = true;
-    setTimeout(() => (showCopySuccess = false), 2000);
-  }
+  function getCountryCode(country: string): string | undefined {
+    if (!map || !map.regions) return undefined;
 
-  function updateSelectedCountries() {
-    if (!map) return;
-    const selected = transformCountryCodes(map.getSelectedRegions());
-    selectedCountries.set(selected);
-    visitedCountriesCount.set(selected.length);
-    localStorage.setItem(
-      "selectedRegion",
-      JSON.stringify(map.getSelectedRegions())
+    return Object.keys(map.regions).find(
+      (key) => map.regions[key].config.name === country
     );
   }
 
-  function resetMap() {
-    if (map) map.clearSelectedRegions();
-    localStorage.removeItem("selectedRegion");
-    selectedCountries.set([]);
-    visitedCountriesCount.set(0);
+  function getModeForCountry(country: string): "visited" | "planned" | "banned" | "none" {
+    const code = getCountryCode(country);
+    if (!code) return "none";
+    return $regionStatusesStore[code] ?? "none";
   }
 
-  function transformCountryCodes(regions: string[]) {
-    return regions.map((region) => map.regions[region].config.name);
+  // Cycle the mode for a given country code
+  function toggleRegionMode(code: string) {
+    regionStatusesStore.update((statuses) => {
+      const currentMode = statuses[code] || null;
+      let newMode: "visited" | "planned" | "banned" | null;
+
+      if (currentMode === null) newMode = "visited";
+      else if (currentMode === "visited") newMode = "planned";
+      else if (currentMode === "planned") newMode = "banned";
+      else newMode = null;
+
+      // if newmode is null, remove the country
+      if (newMode === null) {
+        delete statuses[code];
+      } else {
+        statuses[code] = newMode;
+      }
+
+      return statuses;
+    });
+
+    updateRegionStyle(code);
+    updateActiveCountries();
+    updateVisitedCount();
+    saveRegionStatuses();
+  }
+
+  // Update the fill color for a given region based on its mode
+  function updateRegionStyle(code: string) {
+    if (!map || !map.regions[code]) return;
+    const mode = $regionStatusesStore[code] || "none";
+    map.regions[code].element.setStyle("fill", modeColors[mode]);
+  }
+
+  // Update the list of countries that have a mode set (non-null)
+  function updateActiveCountries() {
+    const active = Object.keys($regionStatusesStore)
+      .filter((code) => $regionStatusesStore[code] !== null)
+      .map((code) => map.regions[code].config.name)
+      .sort();
+    activeCountries.set(active);
+  }
+
+  function updateVisitedCount() {
+    const visited = Object.values($regionStatusesStore).filter(
+      (mode) => mode === "visited"
+    ).length;
+    visitedCountriesCount.set(visited);
+  }
+
+  function resetMap() {
+    if (!map) return;
+    Object.keys(map.regions).forEach((code) => {
+      $regionStatusesStore[code] = null;
+      updateRegionStyle(code);
+    });
+    localStorage.removeItem("regionStatuses");
+    activeCountries.set([]);
+    visitedCountriesCount.set(0);
   }
 
   function getCountries() {
@@ -106,26 +206,22 @@
   }
 
   function filterCountries(event: any) {
-    searchQuery.set(event.target.value.trim().toLowerCase());
+    const query = event.target.value.trim().toLowerCase();
+    searchQuery.set(query);
     filteredCountries = getCountries().filter((country) =>
-      country.toLowerCase().includes(searchQuery)
+      country.toLowerCase().includes(query)
     );
   }
 
+  // Toggle the mode for a given country name
   function toggleCountry(country: string) {
     if (!map) return;
+
     const code = Object.keys(map.regions).find(
       (key) => map.regions[key].config.name === country
     );
-    if (code) selectCountry(code);
-  }
-
-  function selectCountry(code: string) {
-    if (!map) return;
-    map.getSelectedRegions().includes(code)
-      ? map.regions[code].element.select(false)
-      : map.regions[code].element.select(true);
-    updateSelectedCountries();
+    
+    if (code) toggleRegionMode(code);
   }
 
   function getTotalCountriesCount() {
@@ -133,20 +229,26 @@
     return getCountries().length;
   }
 
+  // Export data as CSV, JSON, or TXT
   function exportData(format: string) {
     if (!map) return;
-    const selectedRegions = map.getSelectedRegions();
-    const countries = transformCountryCodes(selectedRegions);
+    const dataArr = Object.keys($regionStatusesStore)
+      .filter((code) => $regionStatusesStore[code] !== null)
+      .map((code) => ({
+        country: map.regions[code].config.name,
+        mode: $regionStatusesStore[code]
+      }));
     let data: any;
     let type;
     let extension;
 
     if (format === "csv" || format === "txt") {
-      data = countries.join("\n");
+      // For CSV/TXT, each line is "country,mode"
+      data = dataArr.map((entry) => `${entry.country},${entry.mode}`).join("\n");
       type = format === "csv" ? "text/csv" : "text/plain";
       extension = format;
     } else if (format === "json") {
-      data = JSON.stringify(countries, null, 2);
+      data = JSON.stringify(dataArr, null, 2);
       type = "application/json";
       extension = "json";
     }
@@ -158,6 +260,7 @@
     link.click();
   }
 
+  // Save the map as a PNG image
   function saveImage() {
     const svg = document.querySelector("svg");
     if (!svg) return;
@@ -177,14 +280,17 @@
       a.click();
     };
   }
-  function shareMap() {
-    const selectedRegions = map.getSelectedRegions();
-    const encodedRegions = btoa(JSON.stringify(selectedRegions));
-    const shareURL = `${window.location.origin}${window.location.pathname}?countries=${encodedRegions}`;
 
+  function shareMap() {
+    const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify($regionStatusesStore));
+    const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
     navigator.clipboard.writeText(shareURL);
-    
     showCopySuccessMessage();
+  }
+
+  function showCopySuccessMessage() {
+    showCopySuccess = true;
+    setTimeout(() => (showCopySuccess = false), 2000);
   }
 </script>
 
@@ -195,14 +301,14 @@
   </div>
 
   <div class="column">
-    <h1>Visited Countries</h1>
+    <h1>MyScratchMap</h1>
     <p>
-      Track and share your travel adventures! Click on countries to mark them as
-      visited.
+      Click on a country to cycle through statuses.<br />
+      <strong>Visited</strong> (orange), <strong>Planned</strong> (light orange), <strong>Banned</strong> (black)
     </p>
 
     <div class="stats">
-      <h2>All Countries</h2>
+      <h2>Visited Places</h2>
       <h2>{$visitedCountriesCount} out of {$totalCountriesCount}</h2>
     </div>
 
@@ -221,20 +327,22 @@
         <div class="country" on:click={() => toggleCountry(country)}>
           <div
             class="countries"
-            class:selected={$selectedCountries.includes(country)}
+            style="background-color: {listColors[getModeForCountry(country)].background}; color: {listColors[getModeForCountry(country)].text};"
           >
             {country}
           </div>
         </div>
       {/each}
     </div>
-
+    
     <h2>Export Data</h2>
     <button class="button" on:click={saveImage}>Save as PNG</button>
     <button class="button" on:click={() => exportData("csv")}>Save as CSV</button>
     <button class="button" on:click={() => exportData("json")}>Save as JSON</button>
     <button class="button" on:click={() => exportData("txt")}>Save as TXT</button>
-    <button class="button" on:click={shareMap}>{showCopySuccess ? "Link Copied!" : "Share Link"}</button>
+    <button class="button" on:click={shareMap}>
+      {showCopySuccess ? "Link Copied!" : "Share Link"}
+    </button>
   </div>
 </div>
 
@@ -253,7 +361,7 @@
     font-family: "Open Sans", sans-serif;
     color: #c96;
     line-height: 1.5em;
-    margin: 20px 0 20px 0;
+    margin: 20px 0;
   }
 
   p {
@@ -293,7 +401,7 @@
     cursor: pointer;
     border-radius: 5px;
     text-align: center;
-    transition: all 0.3s ease 0s;
+    transition: all 0.3s ease;
     margin: 5px;
   }
 
@@ -314,7 +422,7 @@
   }
 
   .countries {
-    color: white;
+    color: antiquewhite;
     display: grid;
     padding: 8px;
     background-color: #2a2a2a;
@@ -357,10 +465,6 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #efb277;
-  }
-
-  .selected {
-    background-color: #c96;
   }
 
   .map-view {

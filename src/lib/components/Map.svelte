@@ -1,21 +1,26 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
-  import { writable } from "svelte/store";
+  import { get, writable } from "svelte/store";
   import LZString from "lz-string"; 
+  import { getStores } from "$app/stores";
 
+  // Map
   let jsVectorMap: any;
   let map: any;
+  
+  // Search
   let filteredCountries: string[] = [];
   let searchQuery = writable("");
-
+  
+  // Stats
   let visitedCountriesCount = writable(0);
   let totalCountriesCount = writable(0);
   let activeCountries = writable<string[]>([]);
-
+ 
   let showCopySuccess = false;
   
-  let regionStatuses: { [code: string]: "visited" | "planned" | "banned" | null } = {};
+  let regionStatusesStore = writable<{ [code: string]: "visited" | "planned" | "banned" | null }>({});
 
   const modeColors: { [key: string]: string } = {
     visited: "#c78f57",
@@ -67,18 +72,18 @@
     if (encodedModes) {
       try {
         const decompressed = LZString.decompressFromEncodedURIComponent(encodedModes);
-        regionStatuses = JSON.parse(decompressed || "{}");
+        $regionStatusesStore = JSON.parse(decompressed || "{}");
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) {
-        regionStatuses = {};
+        $regionStatusesStore = {};
       }
     } else {
-      regionStatuses = JSON.parse(localStorage.getItem("regionStatuses") || "{}");
+      $regionStatusesStore = JSON.parse(localStorage.getItem("regionStatuses") || "{}");
     }
   }
 
   function saveRegionStatuses() {
-    localStorage.setItem("regionStatuses", JSON.stringify(regionStatuses));
+    localStorage.setItem("regionStatuses", JSON.stringify($regionStatusesStore));
   }
 
   function loadMap() {
@@ -94,7 +99,7 @@
       regionStyle: {
         initial: {
           fill: function(code: string) {
-            const mode = regionStatuses[code] || "none";
+            const mode = $regionStatusesStore[code] || "none";
             return modeColors[mode];
           }
         }
@@ -132,48 +137,42 @@
   function getModeForCountry(country: string): "visited" | "planned" | "banned" | "none" {
     const code = getCountryCode(country);
     if (!code) return "none";
-    return regionStatuses[code] ?? "none";
+    return $regionStatusesStore[code] ?? "none";
   }
 
   // Cycle the mode for a given country code
   function toggleRegionMode(code: string) {
-    const currentMode = regionStatuses[code] || null;
+  regionStatusesStore.update((statuses) => {
+    const currentMode = statuses[code] || null;
     let newMode: "visited" | "planned" | "banned" | null;
 
-    if (currentMode === null) {
-      newMode = "visited";
-    } else if (currentMode === "visited") {
-      newMode = "planned";
-    } else if (currentMode === "planned") {
-      newMode = "banned";
-    } else {
-      newMode = null;
-    }
+    if (currentMode === null) newMode = "visited";
+    else if (currentMode === "visited") newMode = "planned";
+    else if (currentMode === "planned") newMode = "banned";
+    else newMode = null;
 
-    regionStatuses[code] = newMode;
-    
-    updateRegionStyle(code);
-    updateActiveCountries();
-    updateVisitedCount();
-    saveRegionStatuses();
+    statuses[code] = newMode;
+    return statuses;
+  });
 
-    // update list color
-    // if (newMode) {
-    //   listColors[newMode].background = modeColors[newMode];
-    // }
-  }
+  updateRegionStyle(code);
+  updateActiveCountries();
+  updateVisitedCount();
+  saveRegionStatuses();
+}
+
 
   // Update the fill color for a given region based on its mode
   function updateRegionStyle(code: string) {
     if (!map || !map.regions[code]) return;
-    const mode = regionStatuses[code] || "none";
+    const mode = $regionStatusesStore[code] || "none";
     map.regions[code].element.setStyle("fill", modeColors[mode]);
   }
 
   // Update the list of countries that have a mode set (non-null)
   function updateActiveCountries() {
-    const active = Object.keys(regionStatuses)
-      .filter((code) => regionStatuses[code] !== null)
+    const active = Object.keys($regionStatusesStore)
+      .filter((code) => $regionStatusesStore[code] !== null)
       .map((code) => map.regions[code].config.name)
       .sort();
     activeCountries.set(active);
@@ -181,7 +180,7 @@
 
   // Count visited countries only (or you could count per mode if needed)
   function updateVisitedCount() {
-    const visited = Object.values(regionStatuses).filter(
+    const visited = Object.values($regionStatusesStore).filter(
       (mode) => mode === "visited"
     ).length;
     visitedCountriesCount.set(visited);
@@ -190,7 +189,7 @@
   function resetMap() {
     if (!map) return;
     Object.keys(map.regions).forEach((code) => {
-      regionStatuses[code] = null;
+      $regionStatusesStore[code] = null;
       updateRegionStyle(code);
     });
     localStorage.removeItem("regionStatuses");
@@ -233,11 +232,11 @@
   // Export data now includes region statuses for each country.
   function exportData(format: string) {
     if (!map) return;
-    const dataArr = Object.keys(regionStatuses)
-      .filter((code) => regionStatuses[code] !== null)
+    const dataArr = Object.keys($regionStatusesStore)
+      .filter((code) => $regionStatusesStore[code] !== null)
       .map((code) => ({
         country: map.regions[code].config.name,
-        mode: regionStatuses[code]
+        mode: $regionStatusesStore[code]
       }));
     let data: any;
     let type;
@@ -284,8 +283,8 @@
 
   // When sharing the map, encode the regionStatuses in the URL using LZ‑String for a shorter string
   function shareMap() {
-    const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify(regionStatuses));
-    console.log(JSON.stringify(regionStatuses));
+    const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify($regionStatusesStore));
+    console.log(JSON.stringify($regionStatusesStore));
     const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
     navigator.clipboard.writeText(shareURL);
     showCopySuccessMessage();
@@ -330,7 +329,7 @@
         <div class="country" on:click={() => toggleCountry(country)}>
           <div
             class="countries"
-            style="background-color: {listColors[getModeForCountry(country)].background}; color: {listColors[getModeForCountry(country)].text}"
+            style="background-color: {listColors[getModeForCountry(country)].background}; color: {listColors[getModeForCountry(country)].text};"
           >
             {country}
           </div>

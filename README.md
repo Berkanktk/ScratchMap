@@ -1,37 +1,38 @@
-# ScratchMap
+# sv
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.1.6.
+Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
-## Development server
+## Creating a project
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+If you're seeing this, you've probably already done this step. Congrats!
 
-## Code scaffolding
+```bash
+# create a new project in the current directory
+npx sv create
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+# create a new project in my-app
+npx sv create my-app
+```
 
-## Build
+## Developing
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-## Running unit tests
+```bash
+npm run dev
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
+```
 
-## Running end-to-end tests
+## Building
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+To create a production version of your app:
 
-## Further help
+```bash
+npm run build
+```
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+You can preview the production build with `npm run preview`.
 
-## Deploy
-Run `ng deploy --base-href ./` to deploy to github pages, and make sure the dist folder has a `CNAME` including `myscratchmap.net`
-
-# Links
-[jvectormap](https://github.com/bjornd/jvectormap) - jQuery Vector Map Library   
-[jsvectormap](https://github.com/themustafaomar/jsvectormap) - javascript Vector Map Library   
-[jsvectormap Docs](https://jvm-docs.vercel.app/docs/introduction) - javascript Vector Map Library Docs  
-[Maps and Country codes](https://gist.github.com/paulsheldrake/69d8817ab616aa81919b9dc438359ccf)  - Country codes and maps
-
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

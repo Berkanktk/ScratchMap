@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
   import { writable } from "svelte/store";
+  import LZString from "lz-string"; // Import LZ‑String
 
   let jsVectorMap: any;
   let map: any;
@@ -10,9 +11,29 @@
 
   let visitedCountriesCount = writable(0);
   let totalCountriesCount = writable(0);
-  let selectedCountries = writable<string[]>([]);
+  // this store now holds the display names for countries with a non-null mode
+  let activeCountries = writable<string[]>([]);
 
   let showCopySuccess = false;
+
+  // Object to hold the mode for each country (keyed by country code)
+  // mode can be "visited", "planned", "banned" or null (for none)
+  let regionStatuses: { [code: string]: "visited" | "planned" | "banned" | null } = {};
+
+  // Color mapping for each mode
+  const modeColors: { [key: string]: string } = {
+    visited: "#92cc66",
+    planned: "#c96",
+    banned: "#2a2a2a",
+    none: "#ffffff"
+  };
+
+  const listColors: { [key: string]: string } = {
+    visited: "#92cc66",
+    planned: "#c96",
+    banned: "#1c1c1c",
+    none: "#2a2a2a"
+  };
 
   onMount(async () => {
     const module = await import("jsvectormap");
@@ -24,20 +45,30 @@
     document.body.appendChild(script);
   });
 
-  function loadMap() {
+  // Load regionStatuses from URL parameter (if exists) or localStorage
+  function loadRegionStatuses() {
     const urlParams = new URLSearchParams(window.location.search);
-    const encodedRegions = urlParams.get("countries");
-
-    let sharedRegions = [];
-    if (encodedRegions) {
+    const encodedModes = urlParams.get("modes");
+    if (encodedModes) {
       try {
-        sharedRegions = JSON.parse(atob(encodedRegions));
+        // Use LZString to decompress the data
+        const decompressed = LZString.decompressFromEncodedURIComponent(encodedModes);
+        regionStatuses = JSON.parse(decompressed || "{}");
       } catch (e) {
-        sharedRegions = [];
+        regionStatuses = {};
       }
     } else {
-      sharedRegions = JSON.parse(localStorage.getItem("selectedRegion") || "[]");
+      regionStatuses = JSON.parse(localStorage.getItem("regionStatuses") || "{}");
     }
+  }
+
+  function saveRegionStatuses() {
+    localStorage.setItem("regionStatuses", JSON.stringify(regionStatuses));
+  }
+
+  function loadMap() {
+    // load statuses first
+    loadRegionStatuses();
 
     map = new jsVectorMap({
       selector: "#map",
@@ -45,56 +76,110 @@
       enableZoom: true,
       showZoomButtons: true,
       showTooltip: true,
-      regionsSelectable: true,
-      selectedRegions: sharedRegions,
-      onRegionTooltipShow(e: any, tooltip: any, code: any) {
-        tooltip.css({ backgroundColor: "#262626", color: "#c96" });
-      },
+      // Disable built-in region selection so we can manage our own modes
+      regionsSelectable: false,
+      // Set initial style per region using our regionStatuses
       regionStyle: {
-        initial: { fill: "#ffffff" },
-        selected: { fill: "#c96" },
+        initial: {
+          fill: function(code: string) {
+            const mode = regionStatuses[code] || "none";
+            return modeColors[mode];
+          }
+        }
       },
-      onRegionSelected: updateSelectedCountries,
-    });
-
-    sharedRegions.forEach((code: any) => {
-      if (map.regions[code]) {
-        map.regions[code].element.select(true);
+      // Use onRegionClick to toggle through modes
+      onRegionClick: (e: any, code: string) => {
+        toggleRegionMode(code);
+      },
+      // Optional: style tooltip if needed
+      onRegionTooltipShow(e: any, tooltip: any, code: string) {
+        tooltip.css({ backgroundColor: "#262626", color: "#c96" });
       }
     });
 
+    // Update all regions with the proper color based on mode.
+    Object.keys(map.regions).forEach((code) => {
+      updateRegionStyle(code);
+    });
+
     filteredCountries = getCountries();
-    updateSelectedCountries();
+    updateActiveCountries();
 
     // Update totalCountriesCount after the map is loaded
     totalCountriesCount.set(getTotalCountriesCount());
   }
 
-  function showCopySuccessMessage() {
-    showCopySuccess = true;
-    setTimeout(() => (showCopySuccess = false), 2000);
-  }
+  function getCountryCode(country: string): string | undefined {
+    // In case the map isn't loaded yet or doesn't have `regions`
+    if (!map || !map.regions) return undefined;
 
-  function updateSelectedCountries() {
-    if (!map) return;
-    const selected = transformCountryCodes(map.getSelectedRegions());
-    selectedCountries.set(selected);
-    visitedCountriesCount.set(selected.length);
-    localStorage.setItem(
-      "selectedRegion",
-      JSON.stringify(map.getSelectedRegions())
+    return Object.keys(map.regions).find(
+      (key) => map.regions[key].config.name === country
     );
   }
 
-  function resetMap() {
-    if (map) map.clearSelectedRegions();
-    localStorage.removeItem("selectedRegion");
-    selectedCountries.set([]);
-    visitedCountriesCount.set(0);
+  // Convenience function that returns the mode (or "none") for a given country name
+  function getModeForCountry(country: string): "visited" | "planned" | "banned" | "none" {
+    const code = getCountryCode(country);
+    if (!code) return "none";
+    return regionStatuses[code] ?? "none";
   }
 
-  function transformCountryCodes(regions: string[]) {
-    return regions.map((region) => map.regions[region].config.name);
+  // Cycle the mode for a given country code
+  function toggleRegionMode(code: string) {
+    const currentMode = regionStatuses[code] || null;
+    let newMode: "visited" | "planned" | "banned" | null;
+    if (currentMode === null) {
+      newMode = "visited";
+    } else if (currentMode === "visited") {
+      newMode = "planned";
+    } else if (currentMode === "planned") {
+      newMode = "banned";
+    } else {
+      newMode = null;
+    }
+    regionStatuses[code] = newMode;
+    updateRegionStyle(code);
+    updateActiveCountries();
+    updateVisitedCount();
+    saveRegionStatuses();
+  }
+
+  // Update the fill color for a given region based on its mode
+  function updateRegionStyle(code: string) {
+    if (!map || !map.regions[code]) return;
+    const mode = regionStatuses[code] || "none";
+    // Change the fill color directly on the region element
+    map.regions[code].element.setStyle("fill", modeColors[mode]);
+  }
+
+  // Update the list of countries that have a mode set (non-null)
+  function updateActiveCountries() {
+    const active = Object.keys(regionStatuses)
+      .filter((code) => regionStatuses[code] !== null)
+      .map((code) => map.regions[code].config.name)
+      .sort();
+    activeCountries.set(active);
+  }
+
+  // Count visited countries only (or you could count per mode if needed)
+  function updateVisitedCount() {
+    const visited = Object.values(regionStatuses).filter(
+      (mode) => mode === "visited"
+    ).length;
+    visitedCountriesCount.set(visited);
+  }
+
+  function resetMap() {
+    if (!map) return;
+    // Reset all region modes and set fill to default white
+    Object.keys(map.regions).forEach((code) => {
+      regionStatuses[code] = null;
+      updateRegionStyle(code);
+    });
+    localStorage.removeItem("regionStatuses");
+    activeCountries.set([]);
+    visitedCountriesCount.set(0);
   }
 
   function getCountries() {
@@ -106,26 +191,20 @@
   }
 
   function filterCountries(event: any) {
-    searchQuery.set(event.target.value.trim().toLowerCase());
+    const query = event.target.value.trim().toLowerCase();
+    searchQuery.set(query);
     filteredCountries = getCountries().filter((country) =>
-      country.toLowerCase().includes(searchQuery)
+      country.toLowerCase().includes(query)
     );
   }
 
+  // When a country name is clicked from the list, find its code and toggle mode
   function toggleCountry(country: string) {
     if (!map) return;
     const code = Object.keys(map.regions).find(
       (key) => map.regions[key].config.name === country
     );
-    if (code) selectCountry(code);
-  }
-
-  function selectCountry(code: string) {
-    if (!map) return;
-    map.getSelectedRegions().includes(code)
-      ? map.regions[code].element.select(false)
-      : map.regions[code].element.select(true);
-    updateSelectedCountries();
+    if (code) toggleRegionMode(code);
   }
 
   function getTotalCountriesCount() {
@@ -133,20 +212,27 @@
     return getCountries().length;
   }
 
+  // Export data now includes region statuses for each country.
   function exportData(format: string) {
     if (!map) return;
-    const selectedRegions = map.getSelectedRegions();
-    const countries = transformCountryCodes(selectedRegions);
+    // Create an array of objects with country name and mode
+    const dataArr = Object.keys(regionStatuses)
+      .filter((code) => regionStatuses[code] !== null)
+      .map((code) => ({
+        country: map.regions[code].config.name,
+        mode: regionStatuses[code]
+      }));
     let data: any;
     let type;
     let extension;
 
     if (format === "csv" || format === "txt") {
-      data = countries.join("\n");
+      // For CSV/TXT, each line is "country,mode"
+      data = dataArr.map((entry) => `${entry.country},${entry.mode}`).join("\n");
       type = format === "csv" ? "text/csv" : "text/plain";
       extension = format;
     } else if (format === "json") {
-      data = JSON.stringify(countries, null, 2);
+      data = JSON.stringify(dataArr, null, 2);
       type = "application/json";
       extension = "json";
     }
@@ -158,6 +244,7 @@
     link.click();
   }
 
+  // Save the map as a PNG image
   function saveImage() {
     const svg = document.querySelector("svg");
     if (!svg) return;
@@ -177,14 +264,20 @@
       a.click();
     };
   }
-  function shareMap() {
-    const selectedRegions = map.getSelectedRegions();
-    const encodedRegions = btoa(JSON.stringify(selectedRegions));
-    const shareURL = `${window.location.origin}${window.location.pathname}?countries=${encodedRegions}`;
 
+  // When sharing the map, encode the regionStatuses in the URL using LZ‑String for a shorter string
+  function shareMap() {
+    // Compress and encode the regionStatuses object
+    const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify(regionStatuses));
+    console.log(JSON.stringify(regionStatuses));
+    const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
     navigator.clipboard.writeText(shareURL);
-    
     showCopySuccessMessage();
+  }
+
+  function showCopySuccessMessage() {
+    showCopySuccess = true;
+    setTimeout(() => (showCopySuccess = false), 2000);
   }
 </script>
 
@@ -195,14 +288,16 @@
   </div>
 
   <div class="column">
-    <h1>Visited Countries</h1>
+    <h1>Country Status</h1>
     <p>
-      Track and share your travel adventures! Click on countries to mark them as
-      visited.
+      Click on a country to cycle through statuses: <br />
+      <span style="color:#92cc66">Visited</span>,
+      <span style="color:#c96">Planned</span> and
+      <span style="color:#c73636">Banned</span>.
     </p>
 
     <div class="stats">
-      <h2>All Countries</h2>
+      <h2>Visited Countries</h2>
       <h2>{$visitedCountriesCount} out of {$totalCountriesCount}</h2>
     </div>
 
@@ -215,26 +310,26 @@
     />
 
     <div class="list">
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       {#each filteredCountries as country}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="country" on:click={() => toggleCountry(country)}>
           <div
             class="countries"
-            class:selected={$selectedCountries.includes(country)}
+            style="background-color: {listColors[getModeForCountry(country)]}"
           >
             {country}
           </div>
         </div>
       {/each}
     </div>
-
+    
     <h2>Export Data</h2>
     <button class="button" on:click={saveImage}>Save as PNG</button>
     <button class="button" on:click={() => exportData("csv")}>Save as CSV</button>
     <button class="button" on:click={() => exportData("json")}>Save as JSON</button>
     <button class="button" on:click={() => exportData("txt")}>Save as TXT</button>
-    <button class="button" on:click={shareMap}>{showCopySuccess ? "Link Copied!" : "Share Link"}</button>
+    <button class="button" on:click={shareMap}>
+      {showCopySuccess ? "Link Copied!" : "Share Link"}
+    </button>
   </div>
 </div>
 
@@ -253,7 +348,7 @@
     font-family: "Open Sans", sans-serif;
     color: #c96;
     line-height: 1.5em;
-    margin: 20px 0 20px 0;
+    margin: 20px 0;
   }
 
   p {
@@ -293,7 +388,7 @@
     cursor: pointer;
     border-radius: 5px;
     text-align: center;
-    transition: all 0.3s ease 0s;
+    transition: all 0.3s ease;
     margin: 5px;
   }
 
@@ -357,10 +452,6 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #efb277;
-  }
-
-  .selected {
-    background-color: #c96;
   }
 
   .map-view {

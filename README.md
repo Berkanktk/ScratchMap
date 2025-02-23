@@ -1,4 +1,4 @@
-# sv
+# ScratchMap
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
@@ -36,3 +36,9 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+# Links
+[jvectormap](https://github.com/bjornd/jvectormap) - jQuery Vector Map Library
+[jsvectormap](https://github.com/themustafaomar/jsvectormap) - javascript Vector Map Library
+[jsvectormap Docs](https://jvm-docs.vercel.app/docs/introduction) - javascript Vector Map Library Docs
+[Maps and Country codes](https://gist.github.com/paulsheldrake/69d8817ab616aa81919b9dc438359ccf) - Country codes and maps

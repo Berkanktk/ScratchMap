@@ -343,10 +343,10 @@
     <button class="button" on:click={shareMap}>
       {showCopySuccess ? "Link Copied!" : "Share Link"}
     </button>
+    
+    <Footer />
   </div>
 </div>
-
-<Footer />
 
 <style>
   h1 {
@@ -472,4 +472,44 @@
     width: 65vw;
     height: 85vh;
   }
+
+  /* Mobile Responsive Styles */
+/* Ensure no horizontal overflow on mobile */
+@media screen and (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .column {
+    height: auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .column:last-child {
+    flex-basis: auto;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .map-view {
+    width: 100%;
+    height: 50vh;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .search,
+  .stats,
+  .list {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .list {
+    height: auto;
+    max-height: 40vh;
+  }
+}
+
 </style>

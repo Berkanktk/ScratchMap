@@ -42,12 +42,11 @@
 
 <style>
   footer {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    color: #fff;
-    padding: 20px;
     display: flex;
+    justify-content: right;
+    align-items: right;
+    margin-top: 0px;
+    color: #fff;
   }
 
   .social-icons {

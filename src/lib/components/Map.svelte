@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Footer from "./Footer.svelte";
   import { writable } from "svelte/store";
-  import LZString from "lz-string"; // Import LZ‑String
+  import LZString from "lz-string"; 
 
   let jsVectorMap: any;
   let map: any;
@@ -11,29 +11,44 @@
 
   let visitedCountriesCount = writable(0);
   let totalCountriesCount = writable(0);
-  // this store now holds the display names for countries with a non-null mode
   let activeCountries = writable<string[]>([]);
 
   let showCopySuccess = false;
-
-  // Object to hold the mode for each country (keyed by country code)
-  // mode can be "visited", "planned", "banned" or null (for none)
+  
   let regionStatuses: { [code: string]: "visited" | "planned" | "banned" | null } = {};
 
-  // Color mapping for each mode
   const modeColors: { [key: string]: string } = {
-    visited: "#92cc66",
-    planned: "#c96",
+    visited: "#c78f57",
+    planned: "#e5cab0", // #e9d4be & #e5cab0 alternative
     banned: "#2a2a2a",
     none: "#ffffff"
   };
 
-  const listColors: { [key: string]: string } = {
-    visited: "#92cc66",
-    planned: "#c96",
-    banned: "#1c1c1c",
-    none: "#2a2a2a"
+  const listColors: ListColors = {
+    visited: {
+      text: "black", 
+      background: "#c78f57"
+    },
+    planned: {
+      text: "black",
+      background: "#e5cab0"
+    },
+    banned: {
+      text: "#777777",
+      background: "#1c1c1c"
+    },
+    none: {
+      text: "antiquewhite",
+      background: "#2a2a2a"
+    }
   };
+
+  interface ListColors {
+    visited: { text: string; background: string };
+    planned: { text: string; background: string };
+    banned: { text: string; background: string };
+    none: { text: string; background: string };
+  }
 
   onMount(async () => {
     const module = await import("jsvectormap");
@@ -51,9 +66,9 @@
     const encodedModes = urlParams.get("modes");
     if (encodedModes) {
       try {
-        // Use LZString to decompress the data
         const decompressed = LZString.decompressFromEncodedURIComponent(encodedModes);
         regionStatuses = JSON.parse(decompressed || "{}");
+        window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) {
         regionStatuses = {};
       }
@@ -67,7 +82,6 @@
   }
 
   function loadMap() {
-    // load statuses first
     loadRegionStatuses();
 
     map = new jsVectorMap({
@@ -76,9 +90,7 @@
       enableZoom: true,
       showZoomButtons: true,
       showTooltip: true,
-      // Disable built-in region selection so we can manage our own modes
       regionsSelectable: false,
-      // Set initial style per region using our regionStatuses
       regionStyle: {
         initial: {
           fill: function(code: string) {
@@ -87,11 +99,9 @@
           }
         }
       },
-      // Use onRegionClick to toggle through modes
       onRegionClick: (e: any, code: string) => {
         toggleRegionMode(code);
       },
-      // Optional: style tooltip if needed
       onRegionTooltipShow(e: any, tooltip: any, code: string) {
         tooltip.css({ backgroundColor: "#262626", color: "#c96" });
       }
@@ -105,12 +115,12 @@
     filteredCountries = getCountries();
     updateActiveCountries();
 
-    // Update totalCountriesCount after the map is loaded
     totalCountriesCount.set(getTotalCountriesCount());
+
+    updateVisitedCount();
   }
 
   function getCountryCode(country: string): string | undefined {
-    // In case the map isn't loaded yet or doesn't have `regions`
     if (!map || !map.regions) return undefined;
 
     return Object.keys(map.regions).find(
@@ -129,6 +139,7 @@
   function toggleRegionMode(code: string) {
     const currentMode = regionStatuses[code] || null;
     let newMode: "visited" | "planned" | "banned" | null;
+
     if (currentMode === null) {
       newMode = "visited";
     } else if (currentMode === "visited") {
@@ -138,18 +149,24 @@
     } else {
       newMode = null;
     }
+
     regionStatuses[code] = newMode;
+    
     updateRegionStyle(code);
     updateActiveCountries();
     updateVisitedCount();
     saveRegionStatuses();
+
+    // update list color
+    // if (newMode) {
+    //   listColors[newMode].background = modeColors[newMode];
+    // }
   }
 
   // Update the fill color for a given region based on its mode
   function updateRegionStyle(code: string) {
     if (!map || !map.regions[code]) return;
     const mode = regionStatuses[code] || "none";
-    // Change the fill color directly on the region element
     map.regions[code].element.setStyle("fill", modeColors[mode]);
   }
 
@@ -172,7 +189,6 @@
 
   function resetMap() {
     if (!map) return;
-    // Reset all region modes and set fill to default white
     Object.keys(map.regions).forEach((code) => {
       regionStatuses[code] = null;
       updateRegionStyle(code);
@@ -201,9 +217,11 @@
   // When a country name is clicked from the list, find its code and toggle mode
   function toggleCountry(country: string) {
     if (!map) return;
+
     const code = Object.keys(map.regions).find(
       (key) => map.regions[key].config.name === country
     );
+    
     if (code) toggleRegionMode(code);
   }
 
@@ -215,7 +233,6 @@
   // Export data now includes region statuses for each country.
   function exportData(format: string) {
     if (!map) return;
-    // Create an array of objects with country name and mode
     const dataArr = Object.keys(regionStatuses)
       .filter((code) => regionStatuses[code] !== null)
       .map((code) => ({
@@ -267,7 +284,6 @@
 
   // When sharing the map, encode the regionStatuses in the URL using LZ‑String for a shorter string
   function shareMap() {
-    // Compress and encode the regionStatuses object
     const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify(regionStatuses));
     console.log(JSON.stringify(regionStatuses));
     const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
@@ -288,16 +304,14 @@
   </div>
 
   <div class="column">
-    <h1>Country Status</h1>
+    <h1>MyScratchMap</h1>
     <p>
-      Click on a country to cycle through statuses: <br />
-      <span style="color:#92cc66">Visited</span>,
-      <span style="color:#c96">Planned</span> and
-      <span style="color:#c73636">Banned</span>.
+      Click on a country to cycle through statuses.<br />
+      <strong>Visited</strong> (orange), <strong>Planned</strong> (light orange), <strong>Banned</strong> (black)
     </p>
 
     <div class="stats">
-      <h2>Visited Countries</h2>
+      <h2>Visited Places</h2>
       <h2>{$visitedCountriesCount} out of {$totalCountriesCount}</h2>
     </div>
 
@@ -310,11 +324,13 @@
     />
 
     <div class="list">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
       {#each filteredCountries as country}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="country" on:click={() => toggleCountry(country)}>
           <div
             class="countries"
-            style="background-color: {listColors[getModeForCountry(country)]}"
+            style="background-color: {listColors[getModeForCountry(country)].background}; color: {listColors[getModeForCountry(country)].text}"
           >
             {country}
           </div>
@@ -409,7 +425,7 @@
   }
 
   .countries {
-    color: white;
+    color: antiquewhite;
     display: grid;
     padding: 8px;
     background-color: #2a2a2a;

@@ -21,9 +21,9 @@
       <FontAwesomeIcon icon={faTwitter} />
     </a>
     <a
-      href="https://www.github.com/berkanktk"
+      href="https://github.com/Berkanktk/ScratchMap"
       target="_blank"
-      aria-label="View my GitHub profile"
+      aria-label="View the source code on GitHub"
     >
       <FontAwesomeIcon icon={faGithub} />
     </a>

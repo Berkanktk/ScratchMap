@@ -303,7 +303,9 @@
   <div class="column">
     <h1>MyScratchMap</h1>
     <p>
-      Click on a country to cycle through statuses.<br />
+      Track and share your travel adventures! Click on a country to cycle through statuses.<br />
+    </p>
+    <p>
       <strong>Visited</strong> (orange), <strong>Planned</strong> (light orange), <strong>Banned</strong> (black)
     </p>
 
@@ -369,7 +371,7 @@
     font-size: 14px;
     color: rgba(255, 255, 255, 0.66);
     line-height: 1.5em;
-    margin: 0 0 20px 0;
+    margin: 12px 0 0 0;
   }
 
   .container {
@@ -473,8 +475,6 @@
     height: 85vh;
   }
 
-  /* Mobile Responsive Styles */
-/* Ensure no horizontal overflow on mobile */
 @media screen and (max-width: 768px) {
   .container {
     flex-direction: column;

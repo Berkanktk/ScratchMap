@@ -188,10 +188,13 @@
 
   function resetMap() {
     if (!map) return;
+    
+    regionStatusesStore.set({});
+
     Object.keys(map.regions).forEach((code) => {
-      $regionStatusesStore[code] = null;
       updateRegionStyle(code);
     });
+    
     localStorage.removeItem("regionStatuses");
     activeCountries.set([]);
     visitedCountriesCount.set(0);

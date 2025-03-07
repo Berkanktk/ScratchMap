@@ -11,19 +11,15 @@ MyScratchMap is a Svelte-powered interactive world map application built on [jsV
      - **Planned**: Light Orange
      - **Banned**: Black
      - **None** (default): White
-
 2. **Real-Time Data Handling**  
    - Automatically saves your status selections in `localStorage`.
    - URL-based sharing: Compresses the status data and embeds it in the URL. Anyone opening that link sees your marked map.
-
 3. **Search & Filter**  
    - Quickly search and filter countries in the sidebar list.
    - Click a filtered country name to cycle its status.
-
 4. **Data Export**  
    - Export your marked countries in CSV, JSON, or TXT formats.
    - Save your map as a PNG image.
-
 5. **Reset**  
    - Clear all marked countries and restore the map to the default state.
 
@@ -34,18 +30,14 @@ MyScratchMap is a Svelte-powered interactive world map application built on [jsV
    - 2nd click: **Planned**
    - 3rd click: **Banned**
    - 4th click: **None** (removes the status)
-
 2. **Search** for countries in the sidebar:
    - As you type in the search box, the list updates to show matching countries.
    - Clicking a country name in the list toggles its status on the map.
-
 3. **Reset Map**:
    - Click the **Reset Map** button to remove all statuses and clear localStorage.
-
 4. **Export Data**:
    - **Save as PNG**: Downloads a snapshot of the map as a PNG file.
    - **Save as CSV**, **JSON**, or **TXT**: Exports your marked countries and their statuses.
-
 5. **Share Link**:
    - Click **Share Link** to copy a custom URL.  
    - Anyone who opens it sees the same marked map.
@@ -95,7 +87,6 @@ MyScratchMap/
 ## Customization
 - **Colors**:  
   Modify the `modeColors` and `listColors` objects in the Svelte file to suit your design.
-
 - **Map Configuration**:  
   Tweak the `jsVectorMap` options within the `loadMap()` function (zoom behavior, tooltip, etc.) in `MyScratchMap.svelte`.
 

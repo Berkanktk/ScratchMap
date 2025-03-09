@@ -3,6 +3,7 @@
   import Footer from "./Footer.svelte";
   import { writable } from "svelte/store";
   import LZString from "lz-string"; 
+  import { listColors, modeColors } from "$lib/constants";
 
   // Map
   let jsVectorMap: any;
@@ -20,39 +21,6 @@
   let showCopySuccess = false;
   
   let regionStatusesStore = writable<{ [code: string]: "visited" | "planned" | "banned" | null }>({});
-
-  const modeColors: { [key: string]: string } = {
-    visited: "#c78f57",
-    planned: "#e5cab0", // #e9d4be & #e5cab0 alternative
-    banned: "#2a2a2a",
-    none: "#ffffff"
-  };
-
-  const listColors: ListColors = {
-    visited: {
-      text: "black", 
-      background: "#c78f57"
-    },
-    planned: {
-      text: "black",
-      background: "#e5cab0"
-    },
-    banned: {
-      text: "#777777",
-      background: "#1c1c1c"
-    },
-    none: {
-      text: "antiquewhite",
-      background: "#2a2a2a"
-    }
-  };
-
-  interface ListColors {
-    visited: { text: string; background: string };
-    planned: { text: string; background: string };
-    banned: { text: string; background: string };
-    none: { text: string; background: string };
-  }
 
   onMount(async () => {
     const module = await import("jsvectormap");

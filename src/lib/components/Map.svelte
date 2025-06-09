@@ -22,6 +22,78 @@
   
   let regionStatusesStore = writable<{ [code: string]: "visited" | "planned" | "banned" | null }>({});
 
+  // Status mapping for shorter encoding
+  const statusMap = {
+    visited: "v",
+    planned: "p",
+    banned: "b",
+    null: "n"
+  } as const;
+
+  const reverseStatusMap = {
+    v: "visited",
+    p: "planned",
+    b: "banned",
+    n: null
+  } as const;
+
+  // Convert statuses to ultra-compact format
+  function compressStatuses(statuses: { [code: string]: "visited" | "planned" | "banned" | null }) {
+    // Convert to array of "code+status" strings and join with comma
+    return Object.entries(statuses)
+      .map(([code, status]) => `${code}${statusMap[status as keyof typeof statusMap]}`)
+      .join(',');
+  }
+
+  // Convert compact format back to statuses
+  function decompressStatuses(compressed: string) {
+    const statuses: { [code: string]: "visited" | "planned" | "banned" | null } = {};
+    if (!compressed) return statuses;
+    
+    // Split by comma and process each "code+status" pair
+    compressed.split(',').forEach(pair => {
+      if (pair.length >= 2) {
+        const code = pair.slice(0, -1);  // All but last character
+        const status = pair.slice(-1);   // Last character
+        statuses[code] = reverseStatusMap[status as keyof typeof reverseStatusMap];
+      }
+    });
+    return statuses;
+  }
+
+  const modeColors: { [key: string]: string } = {
+    visited: "#c78f57",
+    planned: "#e5cab0", // #e9d4be & #e5cab0 alternative
+    banned: "#2a2a2a",
+    none: "#ffffff"
+  };
+
+  const listColors: ListColors = {
+    visited: {
+      text: "black", 
+      background: "#c78f57"
+    },
+    planned: {
+      text: "black",
+      background: "#e5cab0"
+    },
+    banned: {
+      text: "#777777",
+      background: "#1c1c1c"
+    },
+    none: {
+      text: "antiquewhite",
+      background: "#2a2a2a"
+    }
+  };
+
+  interface ListColors {
+    visited: { text: string; background: string };
+    planned: { text: string; background: string };
+    banned: { text: string; background: string };
+    none: { text: string; background: string };
+  }
+
   onMount(async () => {
     const module = await import("jsvectormap");
     jsVectorMap = module.default;
@@ -35,11 +107,11 @@
   // Load regionStatuses from URL parameter (if exists) or localStorage
   function loadRegionStatuses() {
     const urlParams = new URLSearchParams(window.location.search);
-    const encodedModes = urlParams.get("modes");
+    const encodedModes = urlParams.get("share");
     if (encodedModes) {
       try {
         const decompressed = LZString.decompressFromEncodedURIComponent(encodedModes);
-        $regionStatusesStore = JSON.parse(decompressed || "{}");
+        $regionStatusesStore = decompressStatuses(decompressed || "");
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) {
         $regionStatusesStore = {};
@@ -253,8 +325,9 @@
   }
 
   function shareMap() {
-    const encodedModes = LZString.compressToEncodedURIComponent(JSON.stringify($regionStatusesStore));
-    const shareURL = `${window.location.origin}${window.location.pathname}?modes=${encodedModes}`;
+    const compressedStatuses = compressStatuses($regionStatusesStore);
+    const encodedModes = LZString.compressToEncodedURIComponent(compressedStatuses);
+    const shareURL = `${window.location.origin}${window.location.pathname}?share=${encodedModes}`;
     navigator.clipboard.writeText(shareURL);
     showCopySuccessMessage();
   }

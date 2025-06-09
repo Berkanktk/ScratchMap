@@ -60,40 +60,7 @@
     });
     return statuses;
   }
-
-  const modeColors: { [key: string]: string } = {
-    visited: "#c78f57",
-    planned: "#e5cab0", // #e9d4be & #e5cab0 alternative
-    banned: "#2a2a2a",
-    none: "#ffffff"
-  };
-
-  const listColors: ListColors = {
-    visited: {
-      text: "black", 
-      background: "#c78f57"
-    },
-    planned: {
-      text: "black",
-      background: "#e5cab0"
-    },
-    banned: {
-      text: "#777777",
-      background: "#1c1c1c"
-    },
-    none: {
-      text: "antiquewhite",
-      background: "#2a2a2a"
-    }
-  };
-
-  interface ListColors {
-    visited: { text: string; background: string };
-    planned: { text: string; background: string };
-    banned: { text: string; background: string };
-    none: { text: string; background: string };
-  }
-
+  
   onMount(async () => {
     const module = await import("jsvectormap");
     jsVectorMap = module.default;
